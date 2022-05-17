@@ -6,14 +6,22 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
 
-// Contract deployed to: 0x7d353913B6F0c03485016474650423EA474a2eE5
+// Contract deployed to: 0xd2b59bFe37B77166980C9aBB2C7eEFE12119A686
 
 contract ChainBattles is ERC721URIStorage {
     using Strings for uint256;
     using Counters for Counters.Counter;
     Counters.Counter private tokenIds;
 
-    mapping(uint256 => uint256) public tokenIdsToLevels;
+    struct CharacterAttributes {
+        string name;
+        uint256 health;
+        uint256 strength;
+        uint256 agility;
+        uint256 chakra;
+    }
+
+    mapping(uint256 => CharacterAttributes) public tokenIdToAttributes;
 
     constructor() ERC721("Chain Battles", "CBTLS") {}
 
@@ -25,12 +33,28 @@ contract ChainBattles is ERC721URIStorage {
             '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 350">',
             "<style>.base { fill: white; font-family: serif; font-size: 14px; }</style>",
             '<rect width="100%" height="100%" fill="black" />',
-            '<text x="50%" y="40%" class="base" dominant-baseline="middle" text-anchor="middle">',
+            '<text x="50%" y="20%" class="base" dominant-baseline="middle" text-anchor="middle">',
             "Warrior",
             "</text>",
+            '<text x="50%" y="30%" class="base" dominant-baseline="middle" text-anchor="middle">',
+            "Name: ",
+            getAttribute(_tokenId, "name"),
+            "</text>",
+            '<text x="50%" y="40%" class="base" dominant-baseline="middle" text-anchor="middle">',
+            "Health: ",
+            getAttribute(_tokenId, "health"),
+            "</text>",
             '<text x="50%" y="50%" class="base" dominant-baseline="middle" text-anchor="middle">',
-            "Levels: ",
-            getLevels(_tokenId),
+            "Strength: ",
+            getAttribute(_tokenId, "strength"),
+            "</text>",
+            '<text x="50%" y="60%" class="base" dominant-baseline="middle" text-anchor="middle">',
+            "Agility: ",
+            getAttribute(_tokenId, "agility"),
+            "</text>",
+            '<text x="50%" y="70%" class="base" dominant-baseline="middle" text-anchor="middle">',
+            "Chakra: ",
+            getAttribute(_tokenId, "chakra"),
             "</text>",
             "</svg>"
         );
@@ -44,9 +68,29 @@ contract ChainBattles is ERC721URIStorage {
             );
     }
 
-    function getLevels(uint256 _tokenId) public view returns (string memory) {
-        uint256 levels = tokenIdsToLevels[_tokenId];
-        return levels.toString();
+    function getAttribute(uint256 _tokenId, string memory attributeName)
+        public
+        view
+        returns (string memory)
+    {
+        CharacterAttributes memory attributes = tokenIdToAttributes[_tokenId];
+        if (keccak256(bytes(attributeName)) == keccak256(bytes("name"))) {
+            return attributes.name;
+        } else if (keccak256(bytes(attributeName)) == keccak256(bytes("g"))) {
+            return attributes.health.toString();
+        } else if (
+            keccak256(bytes(attributeName)) == keccak256(bytes("strength"))
+        ) {
+            return attributes.strength.toString();
+        } else if (
+            keccak256(bytes(attributeName)) == keccak256(bytes("agility"))
+        ) {
+            return attributes.agility.toString();
+        } else if (
+            keccak256(bytes(attributeName)) == keccak256(bytes("chakra"))
+        ) {
+            return attributes.chakra.toString();
+        }
     }
 
     function getTokenURI(uint256 _tokenId) public returns (string memory) {
@@ -70,11 +114,17 @@ contract ChainBattles is ERC721URIStorage {
             );
     }
 
-    function mint() public {
+    function mint(string memory _name) public {
         tokenIds.increment();
         uint256 newItemId = tokenIds.current();
         _safeMint(msg.sender, newItemId);
-        tokenIdsToLevels[newItemId] = 0;
+        tokenIdToAttributes[newItemId] = CharacterAttributes(
+            _name,
+            10,
+            10,
+            10,
+            10
+        );
         _setTokenURI(newItemId, getTokenURI(newItemId));
     }
 
@@ -84,8 +134,27 @@ contract ChainBattles is ERC721URIStorage {
             ownerOf(tokenId) == msg.sender,
             "You must own this NFT to train it!"
         );
-        uint256 currentLevel = tokenIdsToLevels[tokenId];
-        tokenIdsToLevels[tokenId] = currentLevel + 1;
+        uint256 newHealth = tokenIdToAttributes[tokenId].health + 5;
+        uint256 newStrength = tokenIdToAttributes[tokenId].strength =
+            tokenIdToAttributes[tokenId].strength +
+            2;
+        uint256 newAgility = tokenIdToAttributes[tokenId].agility =
+            tokenIdToAttributes[tokenId].agility +
+            2;
+        uint256 newChakra = tokenIdToAttributes[tokenId].chakra =
+            tokenIdToAttributes[tokenId].chakra +
+            1;
+
+        CharacterAttributes memory newAttributes = CharacterAttributes(
+            tokenIdToAttributes[tokenId].name,
+            newHealth,
+            newStrength,
+            newAgility,
+            newChakra
+        );
+
+        tokenIdToAttributes[tokenId] = newAttributes;
+
         _setTokenURI(tokenId, getTokenURI(tokenId));
     }
 }
