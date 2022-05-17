@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
 
-// Contract deployed to: 0xd2b59bFe37B77166980C9aBB2C7eEFE12119A686
+// Contract deployed to: 0x722b447a72bdfACdC8058808A218F471d7FC9e5c
 
 contract ChainBattles is ERC721URIStorage {
     using Strings for uint256;
@@ -26,7 +26,8 @@ contract ChainBattles is ERC721URIStorage {
     constructor() ERC721("Chain Battles", "CBTLS") {}
 
     function generateCharacter(uint256 _tokenId)
-        public
+        private
+        view
         returns (string memory)
     {
         bytes memory svg = abi.encodePacked(
@@ -38,23 +39,23 @@ contract ChainBattles is ERC721URIStorage {
             "</text>",
             '<text x="50%" y="30%" class="base" dominant-baseline="middle" text-anchor="middle">',
             "Name: ",
-            getAttribute(_tokenId, "name"),
+            tokenIdToAttributes[_tokenId].name,
             "</text>",
             '<text x="50%" y="40%" class="base" dominant-baseline="middle" text-anchor="middle">',
             "Health: ",
-            getAttribute(_tokenId, "health"),
+            tokenIdToAttributes[_tokenId].health.toString(),
             "</text>",
             '<text x="50%" y="50%" class="base" dominant-baseline="middle" text-anchor="middle">',
             "Strength: ",
-            getAttribute(_tokenId, "strength"),
+            tokenIdToAttributes[_tokenId].strength.toString(),
             "</text>",
             '<text x="50%" y="60%" class="base" dominant-baseline="middle" text-anchor="middle">',
             "Agility: ",
-            getAttribute(_tokenId, "agility"),
+            tokenIdToAttributes[_tokenId].agility.toString(),
             "</text>",
             '<text x="50%" y="70%" class="base" dominant-baseline="middle" text-anchor="middle">',
             "Chakra: ",
-            getAttribute(_tokenId, "chakra"),
+            tokenIdToAttributes[_tokenId].chakra.toString(),
             "</text>",
             "</svg>"
         );
@@ -68,32 +69,7 @@ contract ChainBattles is ERC721URIStorage {
             );
     }
 
-    function getAttribute(uint256 _tokenId, string memory attributeName)
-        public
-        view
-        returns (string memory)
-    {
-        CharacterAttributes memory attributes = tokenIdToAttributes[_tokenId];
-        if (keccak256(bytes(attributeName)) == keccak256(bytes("name"))) {
-            return attributes.name;
-        } else if (keccak256(bytes(attributeName)) == keccak256(bytes("g"))) {
-            return attributes.health.toString();
-        } else if (
-            keccak256(bytes(attributeName)) == keccak256(bytes("strength"))
-        ) {
-            return attributes.strength.toString();
-        } else if (
-            keccak256(bytes(attributeName)) == keccak256(bytes("agility"))
-        ) {
-            return attributes.agility.toString();
-        } else if (
-            keccak256(bytes(attributeName)) == keccak256(bytes("chakra"))
-        ) {
-            return attributes.chakra.toString();
-        }
-    }
-
-    function getTokenURI(uint256 _tokenId) public returns (string memory) {
+    function getTokenURI(uint256 _tokenId) public view returns (string memory) {
         bytes memory dataURI = abi.encodePacked(
             "{",
             '"name": "Chain Battles #',
@@ -120,7 +96,7 @@ contract ChainBattles is ERC721URIStorage {
         _safeMint(msg.sender, newItemId);
         tokenIdToAttributes[newItemId] = CharacterAttributes(
             _name,
-            10,
+            100,
             10,
             10,
             10
@@ -128,33 +104,33 @@ contract ChainBattles is ERC721URIStorage {
         _setTokenURI(newItemId, getTokenURI(newItemId));
     }
 
-    function train(uint256 tokenId) public {
-        require(_exists(tokenId));
+    function train(uint256 _tokenId) public {
+        require(_exists(_tokenId));
         require(
-            ownerOf(tokenId) == msg.sender,
+            ownerOf(_tokenId) == msg.sender,
             "You must own this NFT to train it!"
         );
-        uint256 newHealth = tokenIdToAttributes[tokenId].health + 5;
-        uint256 newStrength = tokenIdToAttributes[tokenId].strength =
-            tokenIdToAttributes[tokenId].strength +
+        uint256 newHealth = tokenIdToAttributes[_tokenId].health + 5;
+        uint256 newStrength = tokenIdToAttributes[_tokenId].strength =
+            tokenIdToAttributes[_tokenId].strength +
             2;
-        uint256 newAgility = tokenIdToAttributes[tokenId].agility =
-            tokenIdToAttributes[tokenId].agility +
+        uint256 newAgility = tokenIdToAttributes[_tokenId].agility =
+            tokenIdToAttributes[_tokenId].agility +
             2;
-        uint256 newChakra = tokenIdToAttributes[tokenId].chakra =
-            tokenIdToAttributes[tokenId].chakra +
+        uint256 newChakra = tokenIdToAttributes[_tokenId].chakra =
+            tokenIdToAttributes[_tokenId].chakra +
             1;
 
         CharacterAttributes memory newAttributes = CharacterAttributes(
-            tokenIdToAttributes[tokenId].name,
+            tokenIdToAttributes[_tokenId].name,
             newHealth,
             newStrength,
             newAgility,
             newChakra
         );
 
-        tokenIdToAttributes[tokenId] = newAttributes;
+        tokenIdToAttributes[_tokenId] = newAttributes;
 
-        _setTokenURI(tokenId, getTokenURI(tokenId));
+        _setTokenURI(_tokenId, getTokenURI(_tokenId));
     }
 }
